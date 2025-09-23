@@ -31,6 +31,11 @@
 $ npm install
 ```
 
+# Instalation
+```bash
+$ npm install typeorm pg
+```
+
 ## Compile and run the project
 
 ```bash
@@ -97,10 +102,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 
-# Instalacion
-```bash
-$ npm install typeorm pg
-```
+
 
 
 ## Crear .env
