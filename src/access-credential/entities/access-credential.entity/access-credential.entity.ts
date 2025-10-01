@@ -1,4 +1,4 @@
-/* eslint-disable prettier/prettier */
+
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 export enum CredentialType {

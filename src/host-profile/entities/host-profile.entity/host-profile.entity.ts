@@ -1,4 +1,4 @@
-/* eslint-disable prettier/prettier */
+
 import { Space } from 'src/space/entities/space.entity/space.entity';
 import { User } from 'src/user/entities/user/user.entity';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';

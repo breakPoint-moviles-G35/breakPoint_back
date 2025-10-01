@@ -1,4 +1,4 @@
-/* eslint-disable prettier/prettier */
+
 import { ConfigModule } from '@nestjs/config';
 
 import { EventLogModule } from './event-log/event-log.module';
@@ -12,6 +12,7 @@ import { ReviewModule } from './review/review.module';
 import { IncidentModule } from './incident/incident.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), // 👈 carga .env
@@ -35,6 +36,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     AccessCredentialModule,
     ReviewModule,
     IncidentModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

@@ -1,4 +1,4 @@
-/* eslint-disable prettier/prettier */
+
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 
 import { HostProfile } from 'src/host-profile/entities/host-profile.entity/host-profile.entity';
@@ -22,11 +22,13 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Column({ select: false })
+  password: string;
+
   @Column({ type: 'enum', enum: UserRole })
   role: UserRole;
 
-  @Column()
-  auth_provider: string;
+  
 
   @Column({ default: 'active' })
   status: string;
