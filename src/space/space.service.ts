@@ -17,7 +17,7 @@ export class SpaceService {
     async findAllSortedByPrice() : Promise<Space[]> {
         return this.spaceRepository.find({
             order: {
-                base_price_per_30m: 'ASC',
+                price: 'ASC',
             },
         });
     }

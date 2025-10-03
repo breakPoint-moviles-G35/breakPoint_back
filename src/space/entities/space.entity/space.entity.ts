@@ -1,4 +1,3 @@
-
 import { Booking} from 'src/booking/entities/booking.entity/booking.entity';
 import { HostProfile } from 'src/host-profile/entities/host-profile.entity/host-profile.entity';
 
@@ -17,7 +16,11 @@ export class Space {
   @Column()
   title: string;
 
-  @Column()
+  @Column({ nullable: true })
+  subtitle?: string;
+
+
+  @Column({ nullable : true})
   geo: string;
 
   @Column()
@@ -26,14 +29,14 @@ export class Space {
   @Column('simple-array')
   amenities: string[];
 
-  @Column('simple-array')
+  @Column('simple-array', { nullable: true })
   accessibility: string[];
 
   @Column()
   rules: string;
 
   @Column('decimal')
-  base_price_per_30m: number;
+  price: number;
 
   @Column({ type: 'float', default: 0 })
   rating_avg: number;
