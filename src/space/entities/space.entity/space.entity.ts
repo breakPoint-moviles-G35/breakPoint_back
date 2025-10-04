@@ -26,14 +26,14 @@ export class Space {
   @Column()
   capacity: number;
 
+  @Column({ nullable: true })
+  imageUrl:string;
+
   @Column('simple-array')
   amenities: string[];
 
   @Column('simple-array', { nullable: true })
   accessibility: string[];
-
-  @Column({ nullable: true })
-  imageUrl:string;
 
   @Column()
   rules: string;

@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Controller, Get, Query } from '@nestjs/common';
 import { SpaceService } from './space.service';
 import { Param } from '@nestjs/common'; 
@@ -25,5 +24,10 @@ export class SpaceController {
     @Get(':id')
     async findOne(@Param('id') id: string) {
         return this.spaceService.findOne(id);
-}
+    }
+
+    @Get(':id/details')
+    async findOneWithDetails(@Param('id') id: string) {
+        return this.spaceService.findOneWithDetails(id);
+    }
 }
