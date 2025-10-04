@@ -6,8 +6,12 @@ import { HostProfile } from '../../host-profile/entities/host-profile.entity/hos
 import { Space } from '../../space/entities/space.entity/space.entity';
 import { InventorySlotEntity, SlotStatus } from '../../inventory-slot/entities/inventory-slot.entity/inventory-slot.entity';
 import { Booking, BookingStatus } from '../../booking/entities/booking.entity/booking.entity';
-import { Repository } from 'typeorm';
+import { ReviewEntity } from '../../review/entities/review.entity/review.entity';
+import { EventLog } from '../../event-log/entities/event-log.entity/event-log.entity';
+import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+
+
 
 interface SeedData {
   users: Partial<User>[];
@@ -16,6 +20,31 @@ interface SeedData {
   inventorySlots: Partial<InventorySlotEntity>[];
   bookings: Partial<Booking>[];
 }
+
+// Helpers
+function pickOne<T>(arr: T[]) { return arr[Math.floor(Math.random() * arr.length)]; }
+function pickMany<T>(arr: T[], k: number) {
+  const a = [...arr]; const out: T[] = [];
+  for (let i = 0; i < k && a.length; i++) out.push(a.splice(Math.floor(Math.random()*a.length), 1)[0]);
+  return out;
+}
+function randomInt(min: number, max: number) { return Math.floor(Math.random()*(max-min+1))+min; }
+
+const FILTERS = ['silence','price','proximity','wifi','cleanliness'];
+const FEATURES = ['extend_booking','share_link','reviews','chat_with_host'];
+
+type Daypart = 'morning'|'midday'|'afternoon'|'night';
+function randomDateInDaypart(base: Date, daypart: Daypart) {
+  const d = new Date(base);
+  const hourMap: Record<Daypart,[number,number]> = {
+    morning: [6,11], midday: [12,13], afternoon:[14,18], night:[19,23]
+  };
+  const [h1,h2] = hourMap[daypart];
+  d.setHours(randomInt(h1,h2), randomInt(0,59), randomInt(0,59), 0);
+  return d;
+}
+
+
 
 async function generateSeedData(): Promise<SeedData> {
   // Generar usuarios
@@ -236,6 +265,8 @@ async function seedDatabase() {
   const spaceRepo = app.get<Repository<Space>>(getRepositoryToken(Space));
   const inventorySlotRepo = app.get<Repository<InventorySlotEntity>>(getRepositoryToken(InventorySlotEntity));
   const bookingRepo = app.get<Repository<Booking>>(getRepositoryToken(Booking));
+  const reviewRepo = app.get<Repository<ReviewEntity>>(getRepositoryToken(ReviewEntity));
+  const eventLogRepo = app.get<Repository<EventLog>>(getRepositoryToken(EventLog));
 
   try {
     // Generar datos
@@ -277,7 +308,7 @@ async function seedDatabase() {
     }
 
     // Crear espacios 
-    console.log('🏢 Creando espacios...');
+    console.log('Creando espacios...');
     const existingSpaces = await spaceRepo.find({ relations: ['hostProfile'] });
     const existingSpaceTitles = existingSpaces.map(s => s.title).filter(Boolean);
     const newSpaces = seedData.spaces.filter(space => space.title && !existingSpaceTitles.includes(space.title));
@@ -334,10 +365,169 @@ async function seedDatabase() {
       }));
       
       const createdBookings = await bookingRepo.save(bookingsWithRelations);
-      console.log(`✅ ${createdBookings.length} reservas creadas`);
+      console.log(`${createdBookings.length} reservas creadas`);
     } else {
-      console.log(`✅ ${existingBookings} reservas ya existían`);
+      console.log(`${existingBookings} reservas ya existían`);
     }
+
+
+
+    
+
+
+    // ====== DATOS PARA Q3/Q4/Q7/Q13 ======
+    console.log('Generando event_log (búsquedas, features, cancelaciones) y reviews/surveys...');
+
+    const studentUsers = createdUsers.filter(u => u.role === UserRole.STUDENT);
+    const now = new Date();
+
+    // --- Q13: perfiles + satisfacción (survey/profile) ---
+    const majors = ['Matemáticas','Ingeniería de Sistemas','Economía','Derecho','Diseño','Química','Administración'];
+    const makeProfileEvent = (userId: string) => ({
+      event_type: 'profile_updated',
+      timestamp: new Date(),
+      userId,
+      payload: JSON.stringify({
+        profile: {
+          major: pickOne(majors),
+          semester: randomInt(1, 10),
+          age: randomInt(17, 30)
+        }
+      })
+    });
+
+    const makeSurveyEvent = (userId: string) => ({
+      event_type: 'survey_submitted',
+      timestamp: new Date(),
+      userId,
+      payload: JSON.stringify({
+        satisfaction: Number((Math.random()*2 + 3).toFixed(1)), // 3.0 - 5.0
+      })
+    });
+
+    // --- Q3: búsquedas con filtros (payload.filters = [...]) ---
+    const makeSearchEvent = (userId: string) => {
+      // 1 a 3 filtros por búsqueda, normalizando 'wifi'
+      let k = randomInt(1,3);
+      const chosen = pickMany(FILTERS, k);
+      return {
+        event_type: 'search',
+        timestamp: new Date(now.getTime() - randomInt(0, 14)*24*3600*1000), // últimas 2 semanas
+        userId,
+        payload: JSON.stringify({ filters: chosen })
+      };
+    };
+
+    // --- Q7: uso de funciones (extend, share link, reviews, chat) ---
+    const makeFeatureEvent = (userId: string, bookingId: string) => {
+      const et = pickOne(FEATURES);
+      return {
+        event_type: et, // 'extend_booking' | 'share_link' | 'reviews' | 'chat_with_host'
+        timestamp: new Date(now.getTime() - randomInt(0, 14)*24*3600*1000),
+        userId,
+        bookingId,
+        payload: JSON.stringify({ action: et.replace('_',' ') })
+      };
+    };
+
+    // --- Q4: cancelaciones distribuidas por franja ---
+    const dayparts: Daypart[] = ['morning','midday','afternoon','night'];
+    const makeCancelEvent = (userId: string, bookingId: string, daypart: Daypart) => ({
+      event_type: 'booking_canceled',
+      timestamp: randomDateInDaypart(new Date(), daypart),
+      userId,
+      bookingId,
+      payload: JSON.stringify({ reason: pickOne(['change_of_plans','found_other_space','too_expensive','illness']) })
+    });
+
+    // 1) Crea / actualiza perfiles y encuestas para todos los estudiantes
+    const profileAndSurveys: any[] = [];
+    for (const u of studentUsers) {
+      profileAndSurveys.push(makeProfileEvent(u.id));
+      // 1-2 encuestas por usuario
+      const nSurveys = randomInt(1,2);
+      for (let k=0;k<nSurveys;k++) profileAndSurveys.push(makeSurveyEvent(u.id));
+    }
+    try {
+      await eventLogRepo.save(profileAndSurveys);
+    } catch (error) {
+      console.log('No se pudieron crear event logs de perfiles:', error.message);
+    }
+
+    // 2) Búsquedas con filtros (Q3): 3–8 por estudiante
+    const searches: any[] = [];
+    for (const u of studentUsers) {
+      const n = randomInt(3, 8);
+      for (let i = 0; i < n; i++) searches.push(makeSearchEvent(u.id));
+    }
+    try {
+      await eventLogRepo.save(searches);
+    } catch (error) {
+      console.log('No se pudieron crear event logs de búsquedas:', error.message);
+    }
+
+    // 3) Uso de funciones (Q7): 1–4 por reserva, amarradas a bookings
+    const allBookings = await bookingRepo.find({ relations: ['user'] });
+    const featureEvents: any[] = [];
+    for (const bk of allBookings) {
+      const m = randomInt(1,4);
+      for (let i=0;i<m;i++) featureEvents.push(makeFeatureEvent(bk.user.id, bk.id));
+    }
+    try {
+      await eventLogRepo.save(featureEvents);
+    } catch (error) {
+      console.log('No se pudieron crear event logs de funciones:', error.message);
+    }
+
+    // 4) Cancelaciones (Q4): marca ~25% de bookings como canceladas y genera evento en franja
+    const toCancel = allBookings.filter((_b, idx) => idx % 4 === 0); // ~25%
+    for (const b of toCancel) {
+      // Actualiza status a CANCELED (si existe en tu enum)
+      try {
+        await bookingRepo.update(b.id, { status: BookingStatus.CANCELLED });
+      } catch (_) {
+        // Si enum no tiene CANCELED, usa string
+        await bookingRepo.update(b.id, { status: 'canceled' as any });
+      }
+    }
+    const cancelEvents: any[] = [];
+    for (const b of toCancel) {
+      cancelEvents.push(makeCancelEvent(b.user.id, b.id, pickOne(dayparts)));
+    }
+    try {
+      await eventLogRepo.save(cancelEvents);
+    } catch (error) {
+      console.log('No se pudieron crear event logs de cancelaciones:', error.message);
+    }
+
+    // 5) Reviews (para proxy de satisfacción y consistencia con Q7 'reviews')
+    const reviews: any[] = [];
+    for (const b of allBookings) {
+      if (Math.random() < 0.6) { // ~60% de las reservas tienen review
+        reviews.push({
+          rating: randomInt(3,5),
+          text: pickOne([
+            'Muy buen espacio, tranquilo.',
+            'Buena conexión WiFi y cómodo.',
+            'Ruido en horas pico.',
+            'Excelente para estudiar en grupo.',
+            'Precio justo.'
+          ]),
+          flags: 0,
+          createdAt: new Date(now.getTime() - randomInt(0, 10)*24*3600*1000),
+          bookingId: b.id
+        });
+      }
+    }
+    if (reviews.length) {
+      try {
+        await reviewRepo.save(reviews);
+      } catch (error) {
+        console.log('No se pudieron crear reviews:', error.message);
+      }
+    }
+
+    console.log(`Generados: ${profileAndSurveys.length} perfiles/encuestas, ${searches.length} búsquedas con filtros, ${featureEvents.length} eventos de funciones, ${cancelEvents.length} cancelaciones y ${reviews.length} reviews.`);
 
     console.log('¡Seed completado exitosamente!\n');
     console.log(`- ${createdUsers.length} usuarios`);
