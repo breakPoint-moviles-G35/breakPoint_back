@@ -19,7 +19,7 @@ async function createBasicUsers() {
     // Verificar si ya existen usuarios
     const existingUsers = await userRepo.count();
     if (existingUsers > 0) {
-      console.log(`⚠️  Ya existen ${existingUsers} usuarios en la base de datos`);
+      console.log(`Ya existen ${existingUsers} usuarios en la base de datos`);
       console.log('Si quieres crear usuarios adicionales, modifica este script');
       return;
     }
@@ -49,13 +49,13 @@ async function createBasicUsers() {
     ];
 
     const createdUsers = await userRepo.save(basicUsers);
-    console.log(`✅ ${createdUsers.length} usuarios básicos creados:`);
+    console.log(`${createdUsers.length} usuarios básicos creados:`);
     createdUsers.forEach(user => {
       console.log(`   - ${user.name} (${user.email}) - Rol: ${user.role}`);
     });
 
   } catch (error) {
-    console.error('❌ Error creando usuarios:', error);
+    console.error('Error creando usuarios:', error);
   } finally {
     await app.close();
   }
