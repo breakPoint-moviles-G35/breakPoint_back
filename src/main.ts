@@ -5,6 +5,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
   });
+  
+  // Enable CORS
+  app.enableCors({ origin: true, credentials: true });
+  
   // Simple request logger (runs before guards/controllers)
   app.use((req: any, _res: any, next: any) => {
     const hasAuth = Boolean(req.headers?.authorization);
@@ -16,6 +20,7 @@ async function bootstrap() {
     console.log(`[HTTP] ${req.method} ${req.url} auth=${hasAuth}`);
     next();
   });
+  
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap();

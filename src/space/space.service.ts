@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Space } from './entities/space.entity/space.entity';
@@ -35,5 +35,18 @@ export class SpaceService {
 
   return spaces;
 }
+
+    async findOne(id: string): Promise<Space> {
+  const space = await this.spaceRepository.findOne({
+      where: { id },
+      relations: ['bookings', 'slots', 'hostProfile'], // ajustar segun necesidad (mas adelante)
+    });
+
+    if (!space) {
+      throw new NotFoundException(`Space with id ${id} not found`);
+    }
+
+    return space;
+  }
 
 }

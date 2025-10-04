@@ -32,6 +32,9 @@ export class Space {
   @Column('simple-array', { nullable: true })
   accessibility: string[];
 
+  @Column({ nullable: true })
+  imageUrl:string;
+
   @Column()
   rules: string;
 
@@ -47,3 +50,5 @@ export class Space {
   @OneToMany(() => Booking, (booking) => booking.space)
   bookings: Booking[];
 }
+
+

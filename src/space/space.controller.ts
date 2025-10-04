@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Controller, Get, Query } from '@nestjs/common';
 import { SpaceService } from './space.service';
+import { Param } from '@nestjs/common'; 
 
 @Controller('space')
 export class SpaceController {
@@ -20,4 +21,9 @@ export class SpaceController {
     async findSpacesByAvailability(@Query('start') start: Date, @Query('end') end: Date) {
         return this.spaceService.findSpacesByAvailability(start, end);
     }
+
+    @Get(':id')
+    async findOne(@Param('id') id: string) {
+        return this.spaceService.findOne(id);
+}
 }
