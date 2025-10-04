@@ -53,6 +53,16 @@ npm run seed:dev
 npx ts-node -r tsconfig-paths/register src/database/seeds/seed.ts
 ```
 
+
+### Crear bookings
+```
+# 1. Compilar el proyecto
+npm run build
+
+# 2. Ejecutar la función
+node dist/database/seeds/seed.js bookings
+```
+
 ## ⚠️ Importante
 
 **El script BORRA todos los datos existentes** antes de insertar los nuevos datos. Esto es útil para desarrollo pero **NUNCA** debe ejecutarse en producción.
