@@ -1,13 +1,13 @@
 
 
-import { IsEmail, IsOptional, IsString, MinLength } from "class-validator";
+import { IsOptional, IsString, MinLength } from "class-validator";
 import { UserRole } from "../entities/user/user.entity";
 import { Column } from "typeorm";
 
 
 
 export class CreateUserDto {
-  @IsEmail()
+  @IsString()
   email: string;
 
   @IsString()
