@@ -94,6 +94,7 @@ export class BookingService {
       space: {
         id: b.space?.id,
         title: b.space?.title,
+        imageUrl: (b as any)?.space?.imageUrl,
         price: b.space?.price,
         capacity: b.space?.capacity,
       },
