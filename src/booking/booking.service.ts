@@ -100,6 +100,47 @@ export class BookingService {
       },
     }));
   }
+
+  async findActiveNow(userId: string) {
+    const now = new Date();
+    const bookings = await this.bookingRepo.find({
+      where: { user: { id: userId } },
+      relations: { space: true },
+      order: { slot_start: 'DESC' },
+    });
+    const active = bookings.filter((b) => {
+      const inWindow = b.slot_start <= now && now <= b.slot_end;
+      return inWindow && b.status === BookingStatus.CONFIRMED;
+    });
+    if (active.length === 0) return [];
+    return active.map((b) => ({
+      id: b.id,
+      status: b.status,
+      slotStart: b.slot_start,
+      slotEnd: b.slot_end,
+      space: {
+        id: b.space?.id,
+        title: b.space?.title,
+        imageUrl: (b as any)?.space?.imageUrl,
+      },
+    }));
+  }
+
+  async checkout(userId: string, bookingId: string) {
+    const booking = await this.bookingRepo.findOne({ where: { id: bookingId }, relations: { user: true } });
+    if (!booking || booking.user?.id !== userId) return null;
+
+    const now = new Date();
+    if (now < booking.slot_start || now > booking.slot_end) {
+      throw new BadRequestException('Not within booking time window');
+    }
+    if (booking.status !== BookingStatus.CONFIRMED) {
+      throw new BadRequestException('Only CONFIRMED bookings can be closed');
+    }
+
+    booking.status = BookingStatus.CLOSED;
+    return await this.bookingRepo.save(booking);
+  }
 }
 
 
