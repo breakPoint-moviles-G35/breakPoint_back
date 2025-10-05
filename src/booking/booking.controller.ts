@@ -23,6 +23,7 @@ import { UpdateBookingDto } from './dto/update-booking.dto';
 import type { Request } from 'express';
 
 @Controller('booking')
+@UseGuards(JwtAuthGuard)
 export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
@@ -39,6 +40,9 @@ export class BookingController {
   @Get()
   async findForUser(@Req() req: Request) {
     const userId = (req as any).user?.id;
+    if (!userId) {
+      throw new (require('@nestjs/common').UnauthorizedException)();
+    }
     return this.bookingService.findForUser(userId);
   }
 
@@ -62,13 +66,11 @@ export class BookingController {
     return this.bookingService.remove(id, userId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('active-now')
   findActiveNow(@Req() req: any) {
     return this.bookingService.findActiveNow(req.user.id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post(':id/checkout')
   async checkout(@Req() req: any, @Param('id') id: string) {
     const result = await this.bookingService.checkout(req.user.id, id);
