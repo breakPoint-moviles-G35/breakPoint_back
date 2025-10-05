@@ -12,4 +12,4 @@ import { EventLog } from 'src/event-log/entities/event-log.entity/event-log.enti
     providers: [BookingService],
     controllers: [BookingController],
 })
-export class BookingModule {}
+export class BookingModule{}
