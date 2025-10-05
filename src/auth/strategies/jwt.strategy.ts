@@ -32,6 +32,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   // 2) No uses async si no haces await
   validate(payload: JwtPayload) {
+    // Log mínimo del payload (sin exponer el token completo)
+    // eslint-disable-next-line no-console
+    console.log('[JWT] validate payload', { sub: payload.sub, email: payload.email, role: payload.role });
     return { id: payload.sub, email: payload.email, role: payload.role ?? 'user' };
   }
 }

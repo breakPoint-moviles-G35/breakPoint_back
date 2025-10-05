@@ -11,7 +11,11 @@ import {
   Patch,
   Delete,
   Req,
+  UseGuards,
+  Logger,
+  NotFoundException,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BookingService } from './booking.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
@@ -56,5 +60,19 @@ export class BookingController {
   async remove(@Param('id') id: string, @Req() req: Request) {
     const userId = (req as any).user?.id;
     return this.bookingService.remove(id, userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('active-now')
+  findActiveNow(@Req() req: any) {
+    return this.bookingService.findActiveNow(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/checkout')
+  async checkout(@Req() req: any, @Param('id') id: string) {
+    const result = await this.bookingService.checkout(req.user.id, id);
+    if (!result) throw new NotFoundException('Booking not found');
+    return result;
   }
 }

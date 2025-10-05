@@ -103,6 +103,47 @@ export class BookingService {
     }));
   }
 
+  async findActiveNow(userId: string) {
+    const now = new Date();
+    const bookings = await this.bookingRepo.find({
+      where: { user: { id: userId } },
+      relations: { space: true },
+      order: { slot_start: 'DESC' },
+    });
+    const active = bookings.filter((b) => {
+      const inWindow = b.slot_start <= now && now <= b.slot_end;
+      return inWindow && b.status === BookingStatus.CONFIRMED;
+    });
+    if (active.length === 0) return [];
+    return active.map((b) => ({
+      id: b.id,
+      status: b.status,
+      slotStart: b.slot_start,
+      slotEnd: b.slot_end,
+      space: {
+        id: b.space?.id,
+        title: b.space?.title,
+        imageUrl: (b as any)?.space?.imageUrl,
+      },
+    }));
+  }
+
+  async checkout(userId: string, bookingId: string) {
+    const booking = await this.bookingRepo.findOne({ where: { id: bookingId }, relations: { user: true } });
+    if (!booking || booking.user?.id !== userId) return null;
+
+    const now = new Date();
+    if (now < booking.slot_start || now > booking.slot_end) {
+      throw new BadRequestException('Not within booking time window');
+    }
+    if (booking.status !== BookingStatus.CONFIRMED) {
+      throw new BadRequestException('Only CONFIRMED bookings can be closed');
+    }
+
+    booking.status = BookingStatus.CLOSED;
+    return await this.bookingRepo.save(booking);
+  }
+
   async update(id: string, userId: string, dto: UpdateBookingDto) {
     const booking = await this.bookingRepo.findOne({
       where: { id },
@@ -110,15 +151,14 @@ export class BookingService {
     });
     if (!booking) throw new NotFoundException('Booking not found');
     if (userId && booking.user.id !== userId) {
-  throw new BadRequestException('Not allowed');
-}
+      throw new BadRequestException('Not allowed');
+    }
 
     if (dto.slotStart && dto.slotEnd) {
       const start = new Date(dto.slotStart);
       const end = new Date(dto.slotEnd);
       if (end <= start) throw new BadRequestException('slotEnd must be after slotStart');
 
-      
       const overlap = await this.bookingRepo
         .createQueryBuilder('b')
         .leftJoin('b.space', 'space')
@@ -141,23 +181,20 @@ export class BookingService {
   }
 
   async remove(id: string, userId?: string) {
-  
-  const cleanId = id.trim();
+    const cleanId = id.trim();
 
-  console.log('ID limpio:', cleanId);
+    console.log('ID limpio:', cleanId);
 
-  const booking = await this.bookingRepo.findOne({
-    where: { id: cleanId },
-    relations: { user: true },
-  });
+    const booking = await this.bookingRepo.findOne({
+      where: { id: cleanId },
+      relations: { user: true },
+    });
 
-  if (!booking) throw new NotFoundException('Booking not found');
-  if (userId && booking.user?.id !== userId)
-    throw new BadRequestException('Not allowed');
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (userId && booking.user?.id !== userId)
+      throw new BadRequestException('Not allowed');
 
-  await this.bookingRepo.delete(cleanId);
-  return { message: `Booking ${cleanId} deleted` };
-}
-
-
+    await this.bookingRepo.delete(cleanId);
+    return { message: `Booking ${cleanId} deleted` };
+  }
 }

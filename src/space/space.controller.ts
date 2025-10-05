@@ -1,9 +1,11 @@
 /* eslint-disable prettier/prettier */
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { SpaceService } from './space.service';
 import { Param } from '@nestjs/common'; 
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('space')
+@UseGuards(JwtAuthGuard)
 export class SpaceController {
     constructor(private readonly spaceService: SpaceService) {
 
