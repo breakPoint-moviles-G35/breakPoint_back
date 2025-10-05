@@ -11,4 +11,4 @@ import { User } from 'src/user/entities/user/user.entity';
     providers: [BookingService],
     controllers: [BookingController],
 })
-export class BookingModule {}
+export class BookingModule{}
