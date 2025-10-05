@@ -39,7 +39,7 @@ export class SpaceService {
     async findOne(id: string): Promise<Space> {
   const space = await this.spaceRepository.findOne({
       where: { id },
-      relations: ['bookings', 'slots', 'hostProfile'], // ajustar segun necesidad (mas adelante)
+      relations: ['bookings', 'slots', 'hostProfile'], 
     });
 
     if (!space) {
