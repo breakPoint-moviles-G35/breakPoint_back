@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable prettier/prettier */
 import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Booking, BookingStatus } from './entities/booking.entity/booking.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { UpdateBookingDto } from './dto/update-booking.dto';
 import { Space } from 'src/space/entities/space.entity/space.entity';
 import { User } from 'src/user/entities/user/user.entity';
 
@@ -68,7 +71,6 @@ export class BookingService {
     } catch (e: any) {
       const message = e?.message ?? 'Unknown error';
       const stack = e?.stack;
-      // avoid logging sensitive info beyond dto summary above
       const info = { userId, spaceId: dto?.spaceId } as any;
       Logger.error(`Failed to create booking | ${message}`, stack, BookingService.name);
       Logger.debug(`Context: ${JSON.stringify(info)}`);
@@ -141,6 +143,58 @@ export class BookingService {
     booking.status = BookingStatus.CLOSED;
     return await this.bookingRepo.save(booking);
   }
+
+  async update(id: string, userId: string, dto: UpdateBookingDto) {
+    const booking = await this.bookingRepo.findOne({
+      where: { id },
+      relations: { user: true, space: true },
+    });
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (userId && booking.user.id !== userId) {
+      throw new BadRequestException('Not allowed');
+    }
+
+    if (dto.slotStart && dto.slotEnd) {
+      const start = new Date(dto.slotStart);
+      const end = new Date(dto.slotEnd);
+      if (end <= start) throw new BadRequestException('slotEnd must be after slotStart');
+
+      const overlap = await this.bookingRepo
+        .createQueryBuilder('b')
+        .leftJoin('b.space', 'space')
+        .where('space.id = :spaceId', { spaceId: booking.space.id })
+        .andWhere('(b.slot_start < :end AND b.slot_end > :start)', { start, end })
+        .andWhere('b.id != :id', { id })
+        .andWhere("b.status IN (:...statuses)", { statuses: [BookingStatus.PENDING, BookingStatus.CONFIRMED] })
+        .getCount();
+
+      if (overlap > 0) throw new BadRequestException('Time slot not available');
+
+      booking.slot_start = start;
+      booking.slot_end = end;
+    }
+
+    if (dto.status) booking.status = dto.status;
+
+    const saved = await this.bookingRepo.save(booking);
+    return saved;
+  }
+
+  async remove(id: string, userId?: string) {
+    const cleanId = id.trim();
+
+    console.log('ID limpio:', cleanId);
+
+    const booking = await this.bookingRepo.findOne({
+      where: { id: cleanId },
+      relations: { user: true },
+    });
+
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (userId && booking.user?.id !== userId)
+      throw new BadRequestException('Not allowed');
+
+    await this.bookingRepo.delete(cleanId);
+    return { message: `Booking ${cleanId} deleted` };
+  }
 }
-
-

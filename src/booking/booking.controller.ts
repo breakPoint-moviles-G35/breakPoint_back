@@ -1,27 +1,65 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable prettier/prettier */
-import { Body, Controller, Post, Req, UseGuards, Logger, Get, Param, NotFoundException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Param,
+  Patch,
+  Delete,
+  Req,
+  UseGuards,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BookingService } from './booking.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { UpdateBookingDto } from './dto/update-booking.dto';
+
+import type { Request } from 'express';
 
 @Controller('booking')
 export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
-  @UseGuards(JwtAuthGuard)
+  // CREAR RESERVA
+  
   @Post()
-  create(@Req() req: any, @Body() dto: CreateBookingDto) {
-    const logger = new Logger(BookingController.name);
-    logger.log(`HTTP POST /booking | user=${req?.user?.id}`);
-    return this.bookingService.create(req.user.id, dto);
+  async create(@Req() req: Request, @Body() dto: CreateBookingDto) {
+    const userId = (req as any).user?.id;
+    return this.bookingService.create(userId, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  //  LISTAR RESERVAS POR USUARIO
+  
   @Get()
-  findMy(@Req() req: any) {
-    const logger = new Logger(BookingController.name);
-    logger.log(`HTTP GET /booking | user=${req?.user?.id}`);
-    return this.bookingService.findForUser(req.user.id);
+  async findForUser(@Req() req: Request) {
+    const userId = (req as any).user?.id;
+    return this.bookingService.findForUser(userId);
+  }
+
+  // ACTUALIZAR RESERVA
+ 
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body() dto: UpdateBookingDto,
+  ) {
+    const userId = (req as any).user?.id;
+    return this.bookingService.update(id, userId, dto);
+  }
+
+  // ELIMINAR RESERVA
+  
+  @Delete(':id')
+  async remove(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req as any).user?.id;
+    return this.bookingService.remove(id, userId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -38,5 +76,3 @@ export class BookingController {
     return result;
   }
 }
-
-
