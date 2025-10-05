@@ -13,7 +13,7 @@ export class BookingController {
   create(@Req() req: any, @Body() dto: CreateBookingDto) {
     const logger = new Logger(BookingController.name);
     logger.log(`HTTP POST /booking | user=${req?.user?.id}`);
-    return this.bookingService.create(req.user.id, dto);
+    return this.bookingService.create(req.user?.id, dto);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -21,7 +21,7 @@ export class BookingController {
   findMy(@Req() req: any) {
     const logger = new Logger(BookingController.name);
     logger.log(`HTTP GET /booking | user=${req?.user?.id}`);
-    return this.bookingService.findForUser(req.user.id);
+    return this.bookingService.findForUser(req.user?.id);
   }
 }
 

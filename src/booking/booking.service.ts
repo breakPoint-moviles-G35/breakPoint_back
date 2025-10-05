@@ -69,7 +69,7 @@ export class BookingService {
       const message = e?.message ?? 'Unknown error';
       const stack = e?.stack;
       // avoid logging sensitive info beyond dto summary above
-      const info = { userId, spaceId: dto?.spaceId } as any;
+      const info = { userId, spaceId: dto?.spaceId };
       Logger.error(`Failed to create booking | ${message}`, stack, BookingService.name);
       Logger.debug(`Context: ${JSON.stringify(info)}`);
       throw e;
