@@ -9,6 +9,7 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { Space } from 'src/space/entities/space.entity/space.entity';
 import { User } from 'src/user/entities/user/user.entity';
+import { EventLog } from 'src/event-log/entities/event-log.entity/event-log.entity';
 
 @Injectable()
 export class BookingService {
@@ -16,6 +17,7 @@ export class BookingService {
     @InjectRepository(Booking) private readonly bookingRepo: Repository<Booking>,
     @InjectRepository(Space) private readonly spaceRepo: Repository<Space>,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(EventLog) private readonly eventLogRepo: Repository<EventLog>,
   ) {}
 
   async create(userId: string, dto: CreateBookingDto) {
@@ -81,11 +83,13 @@ export class BookingService {
   async findForUser(userId: string) {
     const logger = new Logger(BookingService.name);
     logger.log(`List bookings requested | userId=${userId}`);
-    const bookings = await this.bookingRepo.find({
-      where: { user: { id: userId } },
-      relations: { space: true },
-      order: { slot_start: 'DESC' },
-    });
+    const bookings = await this.bookingRepo
+      .createQueryBuilder('b')
+      .leftJoinAndSelect('b.space', 'space')
+      .leftJoin('b.user', 'user')
+      .where('user.id = :userId', { userId })
+      .orderBy('b.slot_start', 'DESC')
+      .getMany();
     return bookings.map((b) => ({
       id: b.id,
       status: b.status,
@@ -193,6 +197,14 @@ export class BookingService {
     if (!booking) throw new NotFoundException('Booking not found');
     if (userId && booking.user?.id !== userId)
       throw new BadRequestException('Not allowed');
+
+    // Liberar referencias en event_log para evitar violación de FK
+    await this.eventLogRepo
+      .createQueryBuilder()
+      .delete()
+      .from(EventLog)
+      .where('"bookingId" = :id', { id: cleanId })
+      .execute();
 
     await this.bookingRepo.delete(cleanId);
     return { message: `Booking ${cleanId} deleted` };
