@@ -2,6 +2,7 @@ import { Booking} from 'src/booking/entities/booking.entity/booking.entity';
 import { HostProfile } from 'src/host-profile/entities/host-profile.entity/host-profile.entity';
 
 import { InventorySlotEntity } from 'src/inventory-slot/entities/inventory-slot.entity/inventory-slot.entity';
+import { Review } from 'src/review/entities/review.entity';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
 
 
@@ -49,6 +50,9 @@ export class Space {
 
   @OneToMany(() => Booking, (booking) => booking.space)
   bookings: Booking[];
+
+  @OneToMany(() => Review, (review) => review.space)
+  reviews: Review[];
 }
 
 
