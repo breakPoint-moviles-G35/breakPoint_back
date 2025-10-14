@@ -39,8 +39,9 @@ export class ReviewService {
   }
 
   async findBySpaceId(spaceId: string): Promise<Review[]> {
+    const cleanId = spaceId.trim();
     return await this.reviewRepository.find({
-      where: { space_id: spaceId },
+      where: { space_id: cleanId  },
       relations: ['space', 'user'],
     });
   }

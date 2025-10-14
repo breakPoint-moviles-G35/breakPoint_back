@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Controller,
   Get,
@@ -11,6 +12,8 @@ import {
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import type { Request } from 'express';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('review')
 export class ReviewController {
@@ -19,6 +22,7 @@ export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   async create(@Req() req: Request, @Body() createReviewDto: CreateReviewDto) {
     this.logger.log(`HTTP POST /review | user=${(req as any)?.user?.id}`);
     const userId = (req as any).user?.id;
