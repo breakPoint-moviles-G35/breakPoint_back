@@ -1,11 +1,11 @@
-/* eslint-disable prettier/prettier */
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+
+import { Controller, Get, Query, ParseFloatPipe } from '@nestjs/common';
 import { SpaceService } from './space.service';
 import { Param } from '@nestjs/common'; 
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+// import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('space')
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class SpaceController {
     constructor(private readonly spaceService: SpaceService) {
 
@@ -22,6 +22,14 @@ export class SpaceController {
     @Get('available')
     async findSpacesByAvailability(@Query('start') start: Date, @Query('end') end: Date) {
         return this.spaceService.findSpacesByAvailability(start, end);
+    }
+
+    @Get('nearest')
+    async findNearestAvailableByLocation(
+        @Query('latitude', ParseFloatPipe) latitude: number,
+        @Query('longitude', ParseFloatPipe) longitude: number,
+    ) {
+        return this.spaceService.findNearestAvailableByLocation(latitude, longitude);
     }
 
     @Get(':id')
