@@ -22,6 +22,12 @@ export class SpaceController {
       return this.spaceService.findSpacesByAvailability(start, end);
   }
 
+    @Get('recommendations/:userId')
+    async findSpacesByUserHistory(@Param('userId') userId: string) {
+        return this.spaceService.findSpacesByUserHistory(userId);
+    }
+
+
   @Get('nearest')
   async findNearestAvailableByLocation(
     @Query('latitude', ParseFloatPipe) latitude: number,
