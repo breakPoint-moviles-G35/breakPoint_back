@@ -1,7 +1,6 @@
 
-import { Controller, Get, Query, ParseFloatPipe } from '@nestjs/common';
-import { SpaceService } from './space.service';
-import { Param } from '@nestjs/common'; 
+import { Controller, Get, Query, ParseFloatPipe, Param } from '@nestjs/common';
+import { SpaceService } from './space.service'; 
 // import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('space')
@@ -30,6 +29,11 @@ export class SpaceController {
         @Query('longitude', ParseFloatPipe) longitude: number,
     ) {
         return this.spaceService.findNearestAvailableByLocation(latitude, longitude);
+    }
+
+    @Get('recommendations/:userId')
+    async findSpacesByUserHistory(@Param('userId') userId: string) {
+        return this.spaceService.findSpacesByUserHistory(userId);
     }
 
     @Get(':id')

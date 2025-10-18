@@ -3,13 +3,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Space } from './entities/space.entity/space.entity';
-import { BookingStatus } from 'src/booking/entities/booking.entity/booking.entity';
+import { BookingStatus, Booking } from 'src/booking/entities/booking.entity/booking.entity';
 
 @Injectable()
 export class SpaceService {
     constructor(
         @InjectRepository(Space)
-        private readonly spaceRepository: Repository<Space>
+        private readonly spaceRepository: Repository<Space>,
+        @InjectRepository(Booking)
+        private readonly bookingRepository: Repository<Booking>
     ) {}
 
     async findAll() : Promise<Space[]> {
@@ -119,6 +121,76 @@ export class SpaceService {
   return nearest ? nearest.space : null;
 }
 
-  
+  async findSpacesByUserHistory(userId: string): Promise<Space[]> {
+    // Obtener las últimas 3 reservas del usuario
+    const recentBookings = await this.bookingRepository
+      .createQueryBuilder('booking')
+      .leftJoinAndSelect('booking.space', 'space')
+      .where('booking.user.id = :userId', { userId })
+      .orderBy('booking.slot_start', 'DESC')
+      .limit(3)
+      .getMany();
+    if (recentBookings.length === 0) {
+      // Si no tiene reservas previas, devolver vacio
+      return [];
+    }
+
+    // Extraer todas las amenities de los espacios reservados
+    const historicalAmenities = new Set<string>();
+    recentBookings.forEach(booking => {
+      if (booking.space && booking.space.amenities) {
+        booking.space.amenities.forEach(amenity => {
+          historicalAmenities.add(amenity);
+        });
+      }
+    });
+
+    // Convertir Set a Array para la consulta
+    const amenitiesArray = Array.from(historicalAmenities);
+
+    if (amenitiesArray.length === 0) {
+      // Si no hay amenities, devolver todos los espacios
+      return [];
+    }
+
+    // Obtener IDs de espacios ya reservados para excluirlos
+    const reservedSpaceIds = recentBookings
+      .map(booking => booking.space?.id)
+      .filter(id => id !== undefined);
+    
+    // Buscar todos los espacios y calcular coincidencias de amenities
+    const allSpaces = await this.spaceRepository.find();
+    
+    // Calcular espacios con coincidencias de amenities, excluyendo los ya reservados
+    const spacesWithMatches = allSpaces
+      .filter(space => !reservedSpaceIds.includes(space.id)) // Excluir espacios ya reservados
+      .map(space => {
+        if (!space.amenities || space.amenities.length === 0) {
+          return { space, matches: 0 };
+        }
+        
+        // Contar cuántas amenities del espacio coinciden con las históricas
+        const matches = space.amenities.filter(amenity => 
+          historicalAmenities.has(amenity)
+        ).length;
+        
+        return { space, matches };
+      })
+      .filter(item => item.matches > 0) // Solo espacios con al menos una coincidencia
+      .sort((a, b) => {
+        // Ordenar por número de coincidencias (descendente), luego por rating (descendente), luego por precio (ascendente)
+        if (b.matches !== a.matches) {
+          return b.matches - a.matches;
+        }
+        if (b.space.rating_avg !== a.space.rating_avg) {
+          return b.space.rating_avg - a.space.rating_avg;
+        }
+        return a.space.price - b.space.price;
+      })
+      .slice(0, 2) // Tomar solo las 2 mejores recomendaciones
+      .map(item => item.space); // Extraer solo los espacios
+
+    return spacesWithMatches;
+  }
 
 }
