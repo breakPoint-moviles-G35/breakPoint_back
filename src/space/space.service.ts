@@ -232,7 +232,7 @@ export class SpaceService {
       })
       .slice(0, 2) // Tomar solo las 2 mejores recomendaciones
       .map(item => item.space); // Extraer solo los espacios
-
+      console.log(spacesWithMatches)
     return spacesWithMatches;
   }
 

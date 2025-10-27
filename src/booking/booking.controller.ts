@@ -23,7 +23,6 @@ import { UpdateBookingDto } from './dto/update-booking.dto';
 import type { Request } from 'express';
 
 @Controller('booking')
-@UseGuards(JwtAuthGuard)
 export class BookingController {
   constructor(private readonly bookingService: BookingService) {}
 
