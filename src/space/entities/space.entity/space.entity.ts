@@ -45,13 +45,13 @@ export class Space {
   @Column({ type: 'float', default: 0 })
   rating_avg: number;
 
-  @OneToMany(() => InventorySlotEntity, (slot) => slot.space)
+  @OneToMany(() => InventorySlotEntity, (slot) => slot.space,{nullable:true})
   slots: InventorySlotEntity[];
 
-  @OneToMany(() => Booking, (booking) => booking.space)
+  @OneToMany(() => Booking, (booking) => booking.space,{nullable:true})
   bookings: Booking[];
 
-  @OneToMany(() => Review, (review) => review.space)
+  @OneToMany(() => Review, (review) => review.space,{nullable:true} )
   reviews: Review[];
 }
 

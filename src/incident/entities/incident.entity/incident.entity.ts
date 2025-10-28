@@ -1,4 +1,4 @@
-/* eslint-disable prettier/prettier */
+
 import { Booking } from 'src/booking/entities/booking.entity/booking.entity';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 

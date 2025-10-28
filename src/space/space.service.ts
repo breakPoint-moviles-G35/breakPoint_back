@@ -4,6 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Space } from './entities/space.entity/space.entity';
 import { BookingStatus, Booking } from 'src/booking/entities/booking.entity/booking.entity';
+import { CreateSpaceDto } from './dto/createSpace.dto';
+import { HostProfile } from 'src/host-profile/entities/host-profile.entity/host-profile.entity';
 
 @Injectable()
 export class SpaceService {
@@ -11,12 +13,36 @@ export class SpaceService {
         @InjectRepository(Space)
         private readonly spaceRepository: Repository<Space>,
         @InjectRepository(Booking)
-        private readonly bookingRepository: Repository<Booking>
+        private readonly bookingRepository: Repository<Booking>,
+        @InjectRepository(HostProfile)
+        private readonly hostRepo: Repository<HostProfile>,
     ) {}
 
   async findAll(): Promise<Space[]> {
     return this.spaceRepository.find();
   }
+
+  async create(dto: CreateSpaceDto): Promise<Space> {
+    // Buscar el id del HostProfile relacionado
+    const hostProfile = await this.hostRepo.findOneByOrFail({ id: dto.hostProfileId });
+
+    const space = this.spaceRepository.create({
+      title: dto.title,
+      subtitle: dto.subtitle,
+      geo: dto.geo,
+      capacity: dto.capacity,
+      amenities: dto.amenities,
+      accessibility: dto.accessibility,
+      imageUrl: dto.imageUrl,
+      rules: dto.rules,
+      price: dto.price,
+      hostProfile, 
+    });
+
+    return this.spaceRepository.save(space);
+  }
+
+
 
   async findAllSortedByPrice(): Promise<Space[]> {
     return this.spaceRepository.find({
