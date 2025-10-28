@@ -1,5 +1,6 @@
-import { Controller, Get, Query, ParseFloatPipe, DefaultValuePipe, ParseIntPipe, Param, } from '@nestjs/common';
+import { Controller, Get, Query, ParseFloatPipe, DefaultValuePipe, ParseIntPipe, Param, Body, Post } from '@nestjs/common';
 import { SpaceService } from './space.service';
+import { CreateSpaceDto } from './dto/createSpace.dto';
 // import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @Controller('space')
@@ -11,6 +12,12 @@ export class SpaceController {
   async findAll() {
     return this.spaceService.findAll();
   }
+
+  @Post()
+  async createSpace(@Body() createSpaceDto: CreateSpaceDto) {
+    return this.spaceService.create(createSpaceDto);
+  }
+ 
 
   @Get('sorted')
   async findAllSortedByPrice() {
