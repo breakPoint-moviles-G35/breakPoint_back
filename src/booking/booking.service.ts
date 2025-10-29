@@ -185,28 +185,33 @@ export class BookingService {
   }
 
   async remove(id: string, userId?: string) {
-    const cleanId = id.trim();
+  const cleanId = id.trim();
+  console.log('ID limpio (soft delete):', cleanId);
 
-    console.log('ID limpio:', cleanId);
+  const booking = await this.bookingRepo.findOne({
+    where: { id: cleanId },
+    relations: { user: true },
+  });
 
-    const booking = await this.bookingRepo.findOne({
-      where: { id: cleanId },
-      relations: { user: true },
-    });
+  if (!booking) throw new NotFoundException('Booking not found');
+  if (userId && booking.user?.id !== userId)
+    throw new BadRequestException('Not allowed');
 
-    if (!booking) throw new NotFoundException('Booking not found');
-    if (userId && booking.user?.id !== userId)
-      throw new BadRequestException('Not allowed');
+  // 🔹 Eliminar logs asociados (mantener integridad)
+  await this.eventLogRepo
+    .createQueryBuilder()
+    .delete()
+    .from(EventLog)
+    .where('"bookingId" = :id', { id: cleanId })
+    .execute();
 
-    // Liberar referencias en event_log para evitar violación de FK
-    await this.eventLogRepo
-      .createQueryBuilder()
-      .delete()
-      .from(EventLog)
-      .where('"bookingId" = :id', { id: cleanId })
-      .execute();
+  // 🔹 Cambiar estado a CANCELLED en lugar de eliminar
+  booking.status = BookingStatus.CANCELLED;
+  await this.bookingRepo.save(booking);
 
-    await this.bookingRepo.delete(cleanId);
-    return { message: `Booking ${cleanId} deleted` };
-  }
+  console.log(`Booking ${cleanId} marcado como CANCELLED`);
+
+  return { message: `Booking ${cleanId} cancelled`, status: booking.status };
+}
+
 }
