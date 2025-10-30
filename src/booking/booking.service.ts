@@ -40,6 +40,12 @@ export class BookingService {
         throw new BadRequestException('Invalid dates');
       if (end <= start) throw new BadRequestException('slotEnd must be after slotStart');
 
+      const now = new Date();
+      if (start < now) {
+        logger.warn(`Intento de reserva en el pasado | start=${start.toISOString()} | now=${now.toISOString()}`);
+        throw new BadRequestException('No se puede crear la reserva indicada: la hora de inicio ya ha pasado');
+      }
+
       // Overlap check
       const overlapping = await this.bookingRepo
         .createQueryBuilder('b')
