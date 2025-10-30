@@ -62,6 +62,12 @@ async cancel(@Param('id') id: string, @Req() req: Request) {
     return this.bookingService.findActiveNow(req.user.id);
   }
 
+  // RESERVAS CERRADAS
+  @Get('closed')
+  findClosed(@Req() req: any) {
+    return this.bookingService.findClosed(req.user.id);
+  }
+
   // CHECKOUT
   @Post(':id/checkout')
   async checkout(@Req() req: any, @Param('id') id: string) {

@@ -132,6 +132,29 @@ export class BookingService {
     }));
   }
 
+  async findClosed(userId: string) {
+    const bookings = await this.bookingRepo.find({
+      where: { user: { id: userId } },
+      relations: { space: true },
+      order: { slot_start: 'DESC' },
+    });
+    const closed = bookings.filter((b) => {
+      return b.status === BookingStatus.CLOSED;
+    });
+    if (closed.length === 0) return [];
+    return closed.map((b) => ({
+      id: b.id,
+      status: b.status,
+      slotStart: b.slot_start,
+      slotEnd: b.slot_end,
+      space: {
+        id: b.space?.id,
+        title: b.space?.title,
+        imageUrl: (b as any)?.space?.imageUrl,
+      },
+    }));
+  }
+
   async checkout(userId: string, bookingId: string) {
     const booking = await this.bookingRepo.findOne({ where: { id: bookingId }, relations: { user: true } });
     if (!booking || booking.user?.id !== userId) return null;

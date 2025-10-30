@@ -6,10 +6,11 @@ import { HostProfile } from '../../host-profile/entities/host-profile.entity/hos
 import { Space } from '../../space/entities/space.entity/space.entity';
 import { InventorySlotEntity, SlotStatus } from '../../inventory-slot/entities/inventory-slot.entity/inventory-slot.entity';
 import { Booking, BookingStatus } from '../../booking/entities/booking.entity/booking.entity';
-import { ReviewEntity } from '../../review/entities/review.entity/review.entity';
+
 import { EventLog } from '../../event-log/entities/event-log.entity/event-log.entity';
 import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { Review } from 'src/review/entities/review.entity/review.entity';
 
 
 
@@ -265,7 +266,7 @@ async function seedDatabase() {
   const spaceRepo = app.get<Repository<Space>>(getRepositoryToken(Space));
   const inventorySlotRepo = app.get<Repository<InventorySlotEntity>>(getRepositoryToken(InventorySlotEntity));
   const bookingRepo = app.get<Repository<Booking>>(getRepositoryToken(Booking));
-  const reviewRepo = app.get<Repository<ReviewEntity>>(getRepositoryToken(ReviewEntity));
+  const reviewRepo = app.get<Repository<Review>>(getRepositoryToken(Review));
   const eventLogRepo = app.get<Repository<EventLog>>(getRepositoryToken(EventLog));
 
   try {
