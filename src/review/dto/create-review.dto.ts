@@ -14,9 +14,6 @@ export class CreateReviewDto {
   @IsNotEmpty()
   text: string;
 
-  @IsNumber()
-  @IsOptional()
-  flags?: number;
 }
 
 export class UpdateReviewDto {

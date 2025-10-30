@@ -1,22 +1,35 @@
-
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import { Space } from 'src/space/entities/space.entity/space.entity';
+import { User } from 'src/user/entities/user/user.entity';
 import { Booking } from 'src/booking/entities/booking.entity/booking.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
 
 @Entity()
-export class ReviewEntity {
+export class Review {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => Booking, (booking) => booking.review)
-  @JoinColumn()
-  booking: Booking;
+  @Column()
+  space_id: string;
 
-  @Column('int')
+  @Column()
+  user_id: string;
+
+  @Column()
   rating: number;
 
   @Column('text')
   text: string;
 
-  @Column('int', { default: 0 })
-  flags: number;
+  
+
+  @ManyToOne(() => Space, (space) => space.reviews)
+  @JoinColumn({ name: 'space_id' })
+  space: Space;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @OneToOne(() => Booking, (booking) => booking.review)
+  booking: Booking;
 }
