@@ -33,6 +33,10 @@ export class UserService {
     if (!email || !/@uniandes\.edu\.co$/i.test(email)) {
         throw new BadRequestException('El email debe ser con @uniandes.edu.co');
     }
+    const name = data.name
+    if (!name){
+      throw new BadRequestException('El nombre del usuario es obligatorio :)')
+    }
     data.email = email;
 
     const user = this.repo.create(data);
