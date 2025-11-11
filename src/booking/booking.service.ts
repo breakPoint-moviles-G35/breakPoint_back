@@ -278,18 +278,18 @@ export class BookingService {
 
 async findNextForUser(
     userId: string,
-    windowMinutes = 30,
+    windowMinutes = 60,
   ): Promise<Booking | null> {
     // Si quieres incluir el título del espacio, puedes join a Spaces
     const qb = this.bookingRepo
       .createQueryBuilder('r')
-      .select(['r.id', 'r.spaceId', 'r.startTime'])
+      .select(['r.id', 'r.spaceId', 'r.slot_start'])
       .where('r.userId = :userId', { userId })
-      .andWhere('r.startTime > NOW()')
-      .andWhere(`r.startTime <= NOW() + (:wm || ' minutes')::interval`, {
+      .andWhere('r.slot_start > NOW()')
+      .andWhere(`r.slot_start <= NOW() + (:wm || ' minutes')::interval`, {
         wm: String(windowMinutes),
       })
-      .orderBy('r.startTime', 'ASC')
+      .orderBy('r.slot_start', 'ASC')
       .limit(1);
 
     // Si tienes entidad "Space" y relación, puedes hacer:

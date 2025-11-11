@@ -84,8 +84,9 @@ async cancel(@Param('id') id: string, @Req() req: Request) {
   async next(@Req() req: any) {
     const nextBooking  = await this.bookingService.findNextForUser(req.user.id);
     if (!nextBooking) {
-      throw new NotFoundException('No upcoming bookings found');
+      return [];
     }
+    console.log('Next booking:', nextBooking);
     return nextBooking;
   }
 }
