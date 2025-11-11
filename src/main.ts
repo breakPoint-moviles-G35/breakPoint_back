@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import os from 'node:os';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -23,6 +24,24 @@ async function bootstrap() {
     next();
   });
   
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  const port = Number(process.env.PORT ?? 3000);
+  const host = '0.0.0.0';
+  await app.listen(port, host);
+
+  // Log URLs disponibles
+  const url = await app.getUrl();
+  // eslint-disable-next-line no-console
+  console.log(`[Nest] Listening on ${url} (host=${host}, port=${port})`);
+  const nets = os.networkInterfaces();
+  Object.entries(nets).forEach(([ifaceName, entries]) => {
+    entries?.forEach((ni) => {
+      const family = (ni as unknown as { family: string | number }).family;
+      const isIPv4 = family === 'IPv4' || family === 4;
+      if (!ni.internal && isIPv4) {
+        // eslint-disable-next-line no-console
+        console.log(`LAN URL (${ifaceName}): http://${ni.address}:${port}/`);
+      }
+    });
+  });
 }
 bootstrap();
