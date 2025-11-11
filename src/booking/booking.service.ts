@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable prettier/prettier */
 import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -242,5 +241,31 @@ export class BookingService {
 
   return { message: `Booking ${cleanId} cancelled`, status: booking.status };
 }
+
+async findNextForUser(
+    userId: string,
+    windowMinutes = 30,
+  ): Promise<Booking | null> {
+    // Si quieres incluir el título del espacio, puedes join a Spaces
+    const qb = this.bookingRepo
+      .createQueryBuilder('r')
+      .select(['r.id', 'r.spaceId', 'r.startTime'])
+      .where('r.userId = :userId', { userId })
+      .andWhere('r.startTime > NOW()')
+      .andWhere(`r.startTime <= NOW() + (:wm || ' minutes')::interval`, {
+        wm: String(windowMinutes),
+      })
+      .orderBy('r.startTime', 'ASC')
+      .limit(1);
+
+    // Si tienes entidad "Space" y relación, puedes hacer:
+    // .leftJoin('r.space', 's')
+    // .addSelect(['s.title'])
+
+    const next = await qb.getOne();
+
+    return next;
+  }
+
 
 }
