@@ -227,21 +227,33 @@ async function generateSeedData(): Promise<SeedData> {
       slot_start: new Date(Date.now() + 24 * 60 * 60 * 1000), // Mañana
       slot_end: new Date(Date.now() + 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // 2 horas después
       status: BookingStatus.CONFIRMED,
-      total_amount: 15000,
+      baseSubtotal: 15000,
+      discountApplied: false,
+      discountPercent: 0,
+      discountAmount: 0,
+      totalAmount: 15000,
       currency: 'COP'
     },
     {
       slot_start: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // Pasado mañana
       slot_end: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
       status: BookingStatus.PENDING,
-      total_amount: 25000,
+      baseSubtotal: 25000,
+      discountApplied: false,
+      discountPercent: 0,
+      discountAmount: 0,
+      totalAmount: 25000,
       currency: 'COP'
     },
     {
       slot_start: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // En 3 días
       slot_end: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
       status: BookingStatus.CONFIRMED,
-      total_amount: 20000,
+      baseSubtotal: 20000,
+      discountApplied: false,
+      discountPercent: 0,
+      discountAmount: 0,
+      totalAmount: 20000,
       currency: 'COP'
     }
   ];

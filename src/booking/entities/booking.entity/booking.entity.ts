@@ -46,8 +46,20 @@ export class Booking {
   @OneToMany(() => IncidentEntity, (incident) => incident.booking)
   incidents: IncidentEntity[];
 
-  @Column('decimal')
-  total_amount: number;
+  @Column({ name: 'base_subtotal', type: 'decimal', precision: 10, scale: 2 })
+  baseSubtotal: number;
+
+  @Column({ name: 'discount_applied', type: 'boolean', default: false })
+  discountApplied: boolean;
+
+  @Column({ name: 'discount_percent', type: 'decimal', precision: 5, scale: 2, default: 0 })
+  discountPercent: number;
+
+  @Column({ name: 'discount_amount', type: 'decimal', precision: 10, scale: 2, default: 0 })
+  discountAmount: number;
+
+  @Column({ name: 'total_amount', type: 'decimal', precision: 10, scale: 2 })
+  totalAmount: number;
 
   @Column()
   currency: string;
