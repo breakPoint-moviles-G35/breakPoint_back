@@ -58,8 +58,25 @@ export class BookingService {
       if (overlapping > 0) throw new BadRequestException('Time slot not available');
 
       const hours = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (60 * 60 * 1000)));
-      const totalAmount = Number(space.price) * hours;
-      logger.debug(`Pricing | hours=${hours} | totalAmount=${totalAmount}`);
+      const baseSubtotal = Number(space.price) * hours;
+      logger.debug(`Pricing | hours=${hours} | baseSubtotal=${baseSubtotal}`);
+
+      const previousCompletedBookings = await this.bookingRepo
+        .createQueryBuilder('b')
+        .leftJoin('b.user', 'user')
+        .leftJoin('b.space', 'space')
+        .where('user.id = :userId', { userId })
+        .andWhere('space.id = :spaceId', { spaceId: space.id })
+        .andWhere('b.status IN (:...statuses)', { statuses: [BookingStatus.CLOSED, BookingStatus.CONFIRMED] })
+        .getCount();
+
+      const discountApplied = previousCompletedBookings >= 2;
+      const discountPercent = discountApplied ? 25 : 0;
+      const discountAmount = discountApplied ? Number((baseSubtotal * 0.25).toFixed(2)) : 0;
+      const total = Number((baseSubtotal - discountAmount).toFixed(2));
+      logger.debug(
+        `Loyalty discount | previousCompleted=${previousCompletedBookings} | discountApplied=${discountApplied} | total=${total}`,
+      );
 
       const user = await this.userRepo.findOne({ where: { id: userId } });
       if (!user) throw new NotFoundException('User not found');
@@ -70,12 +87,24 @@ export class BookingService {
         slot_start: start,
         slot_end: end,
         status: BookingStatus.CONFIRMED,
-        total_amount: totalAmount,
+        baseSubtotal,
+        discountApplied,
+        discountPercent,
+        discountAmount,
+        totalAmount: total,
         currency: 'USD',
       });
       const saved = await this.bookingRepo.save(booking);
       logger.log(`Booking created | bookingId=${saved.id} | status=${saved.status}`);
-      return saved;
+      return {
+        ...saved,
+        baseSubtotal: Number(saved.baseSubtotal),
+        discountApplied: saved.discountApplied,
+        discountPercent: Number(saved.discountPercent),
+        discountAmount: Number(saved.discountAmount),
+        totalAmount: Number(saved.totalAmount),
+        total: Number(saved.totalAmount),
+      };
     } catch (e: any) {
       const message = e?.message ?? 'Unknown error';
       const stack = e?.stack;
@@ -101,7 +130,12 @@ export class BookingService {
       status: b.status,
       slotStart: b.slot_start,
       slotEnd: b.slot_end,
-      totalAmount: b.total_amount,
+      baseSubtotal: Number(b.baseSubtotal),
+      discountApplied: b.discountApplied,
+      discountPercent: Number(b.discountPercent),
+      discountAmount: Number(b.discountAmount),
+      totalAmount: Number(b.totalAmount),
+      total: Number(b.totalAmount),
       currency: b.currency,
       space: {
         id: b.space?.id,
