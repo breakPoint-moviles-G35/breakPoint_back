@@ -1,20 +1,27 @@
 import {
-  Controller,
-  Get,
-  Query,
-  ParseFloatPipe,
-  DefaultValuePipe,
-  ParseIntPipe,
-  Param,
   Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseFloatPipe,
+  ParseIntPipe,
+  Patch,
   Post,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { SpaceService } from './space.service';
 import { CreateSpaceDto } from './dto/createSpace.dto';
-// import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { UpdateSpaceDto } from './dto/updateSpace.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { UserRole } from 'src/user/entities/user/user.entity';
+import type { Request } from 'express';
 
 @Controller('space')
-// @UseGuards(JwtAuthGuard)
 export class SpaceController {
   constructor(private readonly spaceService: SpaceService) {}
 
@@ -32,6 +39,18 @@ export class SpaceController {
   @Post()
   async createSpace(@Body() createSpaceDto: CreateSpaceDto) {
     return this.spaceService.create(createSpaceDto);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.HOST, UserRole.ADMIN)
+  async updateSpace(
+    @Param('id') id: string,
+    @Body() updateSpaceDto: UpdateSpaceDto,
+    @Req() req: Request,
+  ) {
+    const user = (req as any)?.user;
+    return this.spaceService.update(id, updateSpaceDto, user);
   }
 
   /**

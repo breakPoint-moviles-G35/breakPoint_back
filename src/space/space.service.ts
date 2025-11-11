@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Space } from './entities/space.entity/space.entity';
 import { BookingStatus, Booking } from 'src/booking/entities/booking.entity/booking.entity';
 import { CreateSpaceDto } from './dto/createSpace.dto';
 import { HostProfile } from 'src/host-profile/entities/host-profile.entity/host-profile.entity';
+import { UpdateSpaceDto } from './dto/updateSpace.dto';
+import { UserRole } from 'src/user/entities/user/user.entity';
 
 @Injectable()
 export class SpaceService {
@@ -44,6 +46,61 @@ export class SpaceService {
     });
 
     return this.spaceRepository.save(space);
+  }
+
+  async update(
+    id: string,
+    dto: UpdateSpaceDto,
+    user?: { id: string; role?: UserRole },
+  ): Promise<Space> {
+    const space = await this.spaceRepository.findOne({
+      where: { id },
+      relations: ['hostProfile', 'hostProfile.user'],
+    });
+
+    if (!space) {
+      throw new NotFoundException(`Space with id ${id} not found`);
+    }
+
+    if (!user) {
+      throw new ForbiddenException('No authenticated user provided');
+    }
+
+    const isAdmin = user.role === UserRole.ADMIN;
+    const isHostOwner =
+      user.role === UserRole.HOST && space.hostProfile?.user?.id === user.id;
+
+    if (!isAdmin && !isHostOwner) {
+      throw new ForbiddenException('No tienes permisos para editar este espacio');
+    }
+
+    const updatableFields: (keyof UpdateSpaceDto)[] = [
+      'title',
+      'subtitle',
+      'geo',
+      'capacity',
+      'amenities',
+      'accessibility',
+      'imageUrl',
+      'rules',
+      'price',
+    ];
+
+    for (const field of updatableFields) {
+      if (
+        Object.prototype.hasOwnProperty.call(dto, field) &&
+        dto[field] !== undefined
+      ) {
+        (space as any)[field] = dto[field];
+      }
+    }
+
+    await this.spaceRepository.save(space);
+
+    return this.spaceRepository.findOne({
+      where: { id: space.id },
+      relations: ['hostProfile'],
+    }) as Promise<Space>;
   }
 
   /**
