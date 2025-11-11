@@ -67,7 +67,7 @@ export class BookingService {
         .leftJoin('b.space', 'space')
         .where('user.id = :userId', { userId })
         .andWhere('space.id = :spaceId', { spaceId: space.id })
-        .andWhere('b.status = :status', { status: BookingStatus.CLOSED })
+        .andWhere('b.status IN (:...statuses)', { statuses: [BookingStatus.CLOSED, BookingStatus.CONFIRMED] })
         .getCount();
 
       const discountApplied = previousCompletedBookings >= 2;
