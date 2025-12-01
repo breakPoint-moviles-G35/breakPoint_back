@@ -297,8 +297,8 @@ async findNextForUser(
     // .addSelect(['s.title'])
 
     const next = await qb.getOne();
-
-    return next;
+    console.log(next)
+    return next;  
   }
 
 

@@ -49,6 +49,18 @@ export class AuthService {
     };
   }
 
+  async changePassword(userId:string ,newPassword: string) {
+    const user = await this.users.findById(userId);
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
+    const hash = await bcrypt.hash(newPassword, 10);
+    user.password = hash;
+    await this.users.updateUser(user);
+    if(!user){
+      throw new BadRequestException('Error al cambiar la contraseña');
+    }
+    return { message: 'Contraseña cambiada exitosamente' };
+  }
+
   private sanitize(user: User) {
     const { ...rest } = user;
     return rest;

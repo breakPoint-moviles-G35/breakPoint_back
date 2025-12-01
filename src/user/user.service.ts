@@ -60,4 +60,9 @@ export class UserService {
 
     return savedUser;
   }
+
+  async updateUser(user:User): Promise<User | null> {
+    
+    return this.repo.save(user);
+}
 }
