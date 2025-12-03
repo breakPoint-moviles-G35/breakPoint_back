@@ -13,6 +13,8 @@ import { IncidentModule } from './incident/incident.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { FaqModule } from './faq/faq.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), 
@@ -37,6 +39,7 @@ import { AuthModule } from './auth/auth.module';
     ReviewModule,
     IncidentModule,
     AuthModule,
+    FaqModule,
   ],
 })
 export class AppModule {}
