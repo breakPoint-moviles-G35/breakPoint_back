@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Body,
   Controller,
@@ -74,5 +78,15 @@ async cancel(@Param('id') id: string, @Req() req: Request) {
     const result = await this.bookingService.checkout(req.user.id, id);
     if (!result) throw new NotFoundException('Booking not found');
     return result;
+  }
+
+  @Get('next')
+  async next(@Req() req: any) {
+    const nextBooking  = await this.bookingService.findNextForUser(req.user.id);
+    if (!nextBooking) {
+      return [];
+    }
+    console.log('Next booking:', nextBooking);
+    return nextBooking;
   }
 }

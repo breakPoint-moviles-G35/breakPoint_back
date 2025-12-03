@@ -31,4 +31,10 @@ export class AuthController {
   me(@Req() req: any) {
     return req.user;
   }
+
+  @Post('ch-password')
+  async changePassword(@Body() body: { userId: string; newPassword: string }) {
+    const user = await this.auth.changePassword(body.userId, body.newPassword);
+    return user;
+  }
 }
