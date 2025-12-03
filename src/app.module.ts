@@ -15,6 +15,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { FaqModule } from './faq/faq.module';
 
+import { AnalyticsModule } from './analytics/analytics.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), 
@@ -40,6 +41,7 @@ import { FaqModule } from './faq/faq.module';
     IncidentModule,
     AuthModule,
     FaqModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}
