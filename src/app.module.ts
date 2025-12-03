@@ -13,6 +13,8 @@ import { IncidentModule } from './incident/incident.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { FaqModule } from './faq/faq.module';
+
 import { AnalyticsModule } from './analytics/analytics.module';
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     ReviewModule,
     IncidentModule,
     AuthModule,
+    FaqModule,
     AnalyticsModule,
   ],
 })
