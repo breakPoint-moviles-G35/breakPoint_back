@@ -20,18 +20,6 @@ export class BookingService {
     @InjectRepository(EventLog) private readonly eventLogRepo: Repository<EventLog>,
   ) {}
 
-  /**
-   * Convierte una fecha a formato ISO 8601 UTC con indicador 'Z'
-   * Asegura que el frontend reciba fechas en formato UTC estándar
-   */
-  private formatDateToUTC(date: Date | string | null | undefined): string | null {
-    if (!date) return null;
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) return null;
-    // toISOString() siempre devuelve formato UTC con 'Z' al final
-    return dateObj.toISOString();
-  }
-
   async create(userId: string, dto: CreateBookingDto) {
     const logger = new Logger(BookingService.name);
     logger.log(`Create booking requested | userId=${userId} | dto=${JSON.stringify(dto)}`);
@@ -110,8 +98,6 @@ export class BookingService {
       logger.log(`Booking created | bookingId=${saved.id} | status=${saved.status}`);
       return {
         ...saved,
-        slotStart: this.formatDateToUTC(saved.slot_start),
-        slotEnd: this.formatDateToUTC(saved.slot_end),
         baseSubtotal: Number(saved.baseSubtotal),
         discountApplied: saved.discountApplied,
         discountPercent: Number(saved.discountPercent),
@@ -142,8 +128,8 @@ export class BookingService {
     return bookings.map((b) => ({
       id: b.id,
       status: b.status,
-      slotStart: this.formatDateToUTC(b.slot_start),
-      slotEnd: this.formatDateToUTC(b.slot_end),
+      slotStart: b.slot_start,
+      slotEnd: b.slot_end,
       baseSubtotal: Number(b.baseSubtotal),
       discountApplied: b.discountApplied,
       discountPercent: Number(b.discountPercent),
@@ -176,8 +162,8 @@ export class BookingService {
     return active.map((b) => ({
       id: b.id,
       status: b.status,
-      slotStart: this.formatDateToUTC(b.slot_start),
-      slotEnd: this.formatDateToUTC(b.slot_end),
+      slotStart: b.slot_start,
+      slotEnd: b.slot_end,
       space: {
         id: b.space?.id,
         title: b.space?.title,
@@ -199,8 +185,8 @@ export class BookingService {
     return closed.map((b) => ({
       id: b.id,
       status: b.status,
-      slotStart: this.formatDateToUTC(b.slot_start),
-      slotEnd: this.formatDateToUTC(b.slot_end),
+      slotStart: b.slot_start,
+      slotEnd: b.slot_end,
       space: {
         id: b.space?.id,
         title: b.space?.title,
@@ -222,12 +208,7 @@ export class BookingService {
     }
 
     booking.status = BookingStatus.CLOSED;
-    const saved = await this.bookingRepo.save(booking);
-    return {
-      ...saved,
-      slotStart: this.formatDateToUTC(saved.slot_start),
-      slotEnd: this.formatDateToUTC(saved.slot_end),
-    };
+    return await this.bookingRepo.save(booking);
   }
 
   async update(id: string, userId: string, dto: UpdateBookingDto) {
@@ -263,11 +244,7 @@ export class BookingService {
     if (dto.status) booking.status = dto.status;
 
     const saved = await this.bookingRepo.save(booking);
-    return {
-      ...saved,
-      slotStart: this.formatDateToUTC(saved.slot_start),
-      slotEnd: this.formatDateToUTC(saved.slot_end),
-    };
+    return saved;
   }
 
   async remove(id: string, userId?: string) {
